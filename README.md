@@ -39,6 +39,7 @@
 import RNSpatial from 'react-native-spatial';
 
 // TODO: What to do with the module?
+
 RNSpatial;
 ```
   
