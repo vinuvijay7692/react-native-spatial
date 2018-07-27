@@ -1,5 +1,5 @@
 
-package com.reactlibrary;
+package com.spatial;
 
 import android.os.Environment;
 import android.widget.Toast;
@@ -83,7 +83,7 @@ public class RNSpatialModule extends ReactContextBaseJavaModule {
 			}
 			isConnected = true;
 			map.putBoolean("isConnected", isConnected);
-			map.putString("spatialStatus", isSpatial ? "Already Spatial" : "Spatial Added");
+			map.putBoolean("isSpatial", isSpatial );
 			promise.resolve(map);
        } catch (Exception e) {
            promise.reject(e.getMessage(), e);
@@ -104,31 +104,9 @@ public class RNSpatialModule extends ReactContextBaseJavaModule {
   }
 
   @ReactMethod
-    public void executeQuery(String query, ReadableMap params, Promise promise) {
+    public void executeQuery(String query, Promise promise) {
       try {
           Stmt stmt = db.prepare(query);
-
-          for (int i=0; i < stmt.bind_parameter_count(); i++) {
-              String pName = stmt.bind_parameter_name(i+1).substring(1);
-              if (!params.hasKey(pName)) {
-                  promise.reject("Value not specified for "+ pName, "Value not specified for "+ pName);
-                  return;
-              }
-              switch (params.getType(pName)) {
-                  case Number:
-                      stmt.bind(stmt.bind_parameter_index("@"+pName), params.getDouble(pName));
-                      break;
-                  case String:
-                      stmt.bind(stmt.bind_parameter_index("@"+pName), params.getString(pName));
-                      break;
-                  case Null:
-                      stmt.bind(stmt.bind_parameter_index("@"+pName));
-                      break;
-                  default:
-                      stmt.bind(stmt.bind_parameter_index("@"+pName), params.getString(pName));
-                      break;
-              }
-          }
 
           int rowCount = 0;
           int colCount = 0;
@@ -164,38 +142,16 @@ public class RNSpatialModule extends ReactContextBaseJavaModule {
           result.putInt("cols", colCount);
           result.putArray("data", rows);
           promise.resolve(result);
-          stmt.clear_bindings();
       } catch (Exception e) {
           promise.reject(e.getMessage(), e);
       }
   }
 
   @ReactMethod
-    public void executeUpdate(String query, ReadableMap params, Promise promise) {
+    public void executeUpdate(String query, Promise promise) {
       try {
           Stmt stmt = db.prepare(query);
 
-          for (int i=0; i < stmt.bind_parameter_count(); i++) {
-              String pName = stmt.bind_parameter_name(i+1).substring(1);
-              if (!params.hasKey(pName)) {
-                  promise.reject("Error", "Value not specified for "+ pName);
-                  return;
-              }
-              switch (params.getType(pName)) {
-                  case Number:
-                      stmt.bind(stmt.bind_parameter_index("@"+pName), params.getDouble(pName));
-                      break;
-                  case String:
-                      stmt.bind(stmt.bind_parameter_index("@"+pName), params.getString(pName));
-                      break;
-                  case Null:
-                      stmt.bind(stmt.bind_parameter_index("@"+pName));
-                      break;
-                  default:
-                      stmt.bind(stmt.bind_parameter_index("@"+pName), params.getString(pName));
-                      break;
-              }
-          }
           WritableMap result = Arguments.createMap();
           if (stmt.step()) {
               result.putInt("count", stmt.column_count());
@@ -203,7 +159,6 @@ public class RNSpatialModule extends ReactContextBaseJavaModule {
                   result.putString("data", stmt.column_string(0));
               }
           }
-          stmt.clear_bindings();
           promise.resolve(result);
       } catch (Exception e) {
           promise.reject(e.getMessage(), e);
@@ -244,7 +199,31 @@ public class RNSpatialModule extends ReactContextBaseJavaModule {
           db.exec(sb.toString(), null);
           WritableMap result = Arguments.createMap();
           result.putBoolean("success", true);
-          result.putString("query", sb.toString());
+          if (params.hasKey("geometry")) {
+              String geometry = params.getString("geometry");
+              Stmt queryGeom = db.prepare("SELECT AddGeometryColumn(@table, @column, @srid, @geom_type, @dimension)");
+              queryGeom.bind(queryGeom.bind_parameter_index("@table"), params.getString("tableName"));
+              queryGeom.bind(queryGeom.bind_parameter_index("@column"),"GEOM");
+              queryGeom.bind(queryGeom.bind_parameter_index("@srid"),4326);
+              queryGeom.bind(queryGeom.bind_parameter_index("@geom_type"),geometry);
+              queryGeom.bind(queryGeom.bind_parameter_index("@dimension"), "XY");
+              if (queryGeom.step()) {
+                  queryGeom.clear_bindings();
+                  int res = queryGeom.column_int(0);
+                  result.putBoolean("geomAdded", res == 1);
+                  if (res == 1) {
+                      queryGeom = db.prepare("SELECT CreateSpatialIndex(@table, @column)");
+                      queryGeom.bind(queryGeom.bind_parameter_index("@table"), params.getString("tableName"));
+                      queryGeom.bind(queryGeom.bind_parameter_index("@column"),"GEOM");
+                      if (queryGeom.step()) {
+                          queryGeom.clear_bindings();
+                          res = queryGeom.column_int(0);
+                          result.putBoolean("geomIndexed", res == 1);
+                      }
+                  }
+              }
+          }
+          result.putBoolean("tableCreated", true);
           promise.resolve(result);
       } catch (Exception e) {
           promise.reject(e.getMessage(), e);

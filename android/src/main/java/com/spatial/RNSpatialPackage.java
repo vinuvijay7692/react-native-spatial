@@ -1,5 +1,5 @@
 
-package com.reactlibrary;
+package com.spatial;
 
 import java.util.Arrays;
 import java.util.Collections;
