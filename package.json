@@ -1,7 +1,7 @@
 {
   "name": "react-native-spatial",
   "version": "1.0.0",
-  "description": "",
+  "description": "Spatialite package for React Native.",
   "main": "index.js",
   "scripts": {
   },
@@ -12,10 +12,21 @@
     "spatial",
     "spatialite"
   ],
-  "author": "Vineeth K",
+  "author": {
+    "name": "Vineeth K",
+    "email": "vineeth269@gmail.com"
+  },
   "license": "MIT",
   "peerDependencies": {
     "react-native": "^0.41.2",
     "react-native-windows": "0.41.0-rc.1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git://github.com/vinuvijay7692/react-native-spatial.git"
+  },
+  "homepage": "https://github.com/vinuvijay7692/react-native-spatial",
+  "bugs": {
+    "url": "https://github.com/vinuvijay7692/react-native-spatial/issues"
   }
 }
