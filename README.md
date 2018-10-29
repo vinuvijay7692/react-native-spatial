@@ -38,7 +38,46 @@
 ```javascript
 import RNSpatial from 'react-native-spatial';
 
-// TODO: What to do with the module?
+const runExample = async () => {
+    console.log(RNSpatial);
+
+        await RNSpatial.connect('testingDB');
+        await RNSpatial.createTable({
+            tableName: 'test_geom',
+            columns: [
+                {
+                    name: 'id',
+                    type: 'INTEGER',
+                    constraints: [
+                        'PRIMARY KEY',
+                        'NOT NULL'
+                    ]
+                },
+                {
+                    name: 'name',
+                    type: 'TEXT',
+                    constraints: [
+                        'NOT NULL'
+                    ]
+                },
+                {
+                    name: 'measured_value',
+                    type: 'DOUBLE',
+                    constraints: [
+                        'NOT NULL'
+                    ]
+                }
+            ]
+        });
+        await RNSpatial.executeQuery("SELECT AddGeometryColumn('test_geom', 'the_geom', 4326, 'POINT', 'XY');");
+        await RNSpatial.executeQuery("INSERT INTO test_geom (id, name, measured_value, the_geom) VALUES (10, 'tenth point',             10.123456789, GeomFromText ('POINT(10.01 10.02)', 4326));");
+        RNSpatial.executeQuery("SELECT * FROM test_geom;")
+            .then(response => {
+                console.log(response);
+            })
+};
+
+runExample();
 
 RNSpatial;
 ```
