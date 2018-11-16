@@ -74,6 +74,8 @@ const runExample = async () => {
         RNSpatial.executeQuery("SELECT * FROM test_geom;")
             .then(response => {
                 console.log(response);
+                // don't forget to close connection
+                RNSpatial.close();
             })
 };
 
